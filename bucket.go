@@ -112,9 +112,12 @@ func New(fillInterval time.Duration, capacity, transferUnit int64) (ret *Bucket)
 	}
 }
 
+// basic units
 const (
-	KB = 1024
-	MB = 1024 * 1024
+	KB  = 1024
+	MB  = KB * 1024
+	KiB = 1000
+	MiB = KiB * 1000
 )
 
 // NewFromRate creates a Bucket by specifying transfer rate
