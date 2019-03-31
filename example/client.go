@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Patrolavia/ratelimit"
+	"github.com/raohwork/ratelimit"
 )
 
 func mockserver() {
-	content := strings.Repeat(".", 100*1024)
+	content := strings.Repeat(".", 100*ratelimit.KB)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, content)
 	})
@@ -30,8 +30,8 @@ func clientExample() error {
 	}
 	defer resp.Body.Close()
 
-	bucket := ratelimit.NewFromRate(10*1024, 10*1024, 0)
-	wrappedReader := ratelimit.NewReader(resp.Body, bucket)
+	bucket := ratelimit.NewFromRate(10*ratelimit.KB, 10*ratelimit.KB, 0)
+	wrappedReader := bucket.NewReader(resp.Body)
 	if _, err := ioutil.ReadAll(wrappedReader); err != nil {
 		return err
 	}
