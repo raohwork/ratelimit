@@ -124,7 +124,12 @@ const (
 //   - rate: transfer rate in bytes per second
 //   - burst: burst rate in bytes per second
 //   - transferUnit: transfer unit (see New() for detail), <= 0 will be forced to rate/10
+//
+// The rate is capped at 1,000,000,000 bytes/s, which fills a token every 1ns.
 func NewFromRate(rate, burst, transferUnit int64) (ret *Bucket) {
+	if rate > int64(time.Second) {
+		rate = int64(time.Second)
+	}
 	if transferUnit <= 0 {
 		transferUnit = rate / 10
 	}
