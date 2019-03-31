@@ -7,19 +7,25 @@ type limitedReader struct {
 	b *Bucket
 }
 
-func (r *limitedReader) Read(buf []byte) (ret int, err error) {
+func (r *limitedReader) Read(buf []byte) (written int, err error) {
 	bytesToRead := int64(len(buf))
-	n := r.b.Take(bytesToRead)
-	if n == 0 {
-		return 0, nil
+	for bytesToRead > 0 {
+		n := r.b.Take(bytesToRead)
+		tmpBuf := buf[written : int64(written)+n]
+		ret, err := r.r.Read(tmpBuf)
+		if err != nil {
+			if rest := n - int64(ret); rest > 0 {
+				r.b.Return(rest)
+			}
+			return written + ret, err
+		}
+		bytesToRead -= int64(ret)
+		written += ret
 	}
-	tmpBuf := buf[0:n]
-	ret, err = r.r.Read(tmpBuf)
-	r.b.Return(n - int64(ret))
 	return
 }
 
-// NewReader wraps an io.Reader and add transfer rate limitation on it.
-func NewReader(reader io.Reader, bucket *Bucket) io.Reader {
-	return &limitedReader{reader, bucket}
+// NewReader wraps an io.Reader and applies transfer rate limitation on it.
+func (b *Bucket) NewReader(reader io.Reader) io.Reader {
+	return &limitedReader{reader, b}
 }

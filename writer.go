@@ -1,6 +1,8 @@
 package ratelimit
 
-import "io"
+import (
+	"io"
+)
 
 type limitedWriter struct {
 	w io.Writer
@@ -14,7 +16,10 @@ func (w *limitedWriter) Write(buf []byte) (written int, err error) {
 		tmpBuf := buf[written : int64(written)+n]
 		ret, err := w.w.Write(tmpBuf)
 		if err != nil {
-			return written, err
+			if rest := n - int64(ret); rest > 0 {
+				w.b.Return(rest)
+			}
+			return written + ret, err
 		}
 		bytesToWrite -= int64(ret)
 		written += ret
@@ -22,7 +27,7 @@ func (w *limitedWriter) Write(buf []byte) (written int, err error) {
 	return
 }
 
-// NewReader wraps an io.Reader and add transfer rate limitation on it.
-func NewWriter(writer io.Writer, bucket *Bucket) io.Writer {
-	return &limitedWriter{writer, bucket}
+// NewReader wraps an io.Reader and applies transfer rate limitation on it.
+func (b *Bucket) NewWriter(writer io.Writer) io.Writer {
+	return &limitedWriter{writer, b}
 }
