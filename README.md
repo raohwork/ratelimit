@@ -13,10 +13,10 @@ defer resp.Body.Close()
 
 bucket := ratelimit.NewFromRate(
 	100*1024, // limit transfer rate to 10kb/s
-	100*1024, // bucket capacity, tune this if needed.
-	0, // allocate this much tokens a time, 0 means capacity/2
+	100*1024, // burst rate (bucket capacity), tune this if needed.
+	0, // allocate this much tokens a time, 0 or lesser means rate/10
 )
-r := ratelimit.NewReader(resp.Body, bucket)
+r := bucket.NewReader(resp.Body)
 io.Copy(dst, r)
 ```
 
@@ -24,8 +24,8 @@ See example folder for more.
 
 ## Total transfer rate
 
-Bucket is thread-safe. You can share same Bucket betweens readers/writers to limit the total transfer rate.
+Bucket is thread-safe. You can share same Bucket between readers/writers to limit the total transfer rate.
 
 ## License
 
-LGPL v3 or later.
+LGPL v3
